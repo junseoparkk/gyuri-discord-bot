@@ -105,7 +105,7 @@ def setup_commands(bot):
         view.add_item(DeleteChannelSelect())
         await interaction.response.send_message("삭제할 모임 채널을 선택하세요:", view=view, ephemeral=True)
 
-    class RaffleButton(Button):
+    class RaffleButton(discord.ui.Button):
         def __init__(self, raffle):
             super().__init__(label="참가", style=discord.ButtonStyle.primary)
             self.raffle = raffle
@@ -115,19 +115,22 @@ def setup_commands(bot):
             if user not in self.raffle['participants']:
                 self.raffle['participants'].append(user)
                 await interaction.response.send_message(f"{user.name}님이 참가했습니다!", ephemeral=True)
-                if len(self.raffle['participants']) >= self.raffle['total']:
-                    await self.raffle['message'].edit(view=None)
-                    await reveal_raffle_result(interaction, self.raffle)
             else:
                 await interaction.response.send_message("이미 참가하셨습니다!", ephemeral=True)
+
+    class View(discord.ui.View):
+        def __init__(self, raffle):
+            super().__init__()
+            self.raffle = raffle
+            self.add_item(RaffleButton(raffle))
 
     async def reveal_raffle_result(interaction: discord.Interaction, raffle):
         if len(raffle['participants']) < raffle['winners']:
             await interaction.followup.send(f"참가자가 충분하지 않습니다. 제비뽑기 '{raffle['name']}'를 취소합니다.")
             return
 
-        winners_list = random.sample(raffle['participants'], raffle['winners'])
-        winner_names = ", ".join([winner.name for winner in winners_list])
+        winners = random.sample(raffle['participants'], raffle['winners'])
+        winner_names = ", ".join([winner.name for winner in winners])
         await interaction.followup.send(f"제비뽑기 '{raffle['name']}'의 당첨자는: {winner_names}입니다!")
 
     @bot.tree.command(name='제비')
@@ -142,26 +145,18 @@ def setup_commands(bot):
             'message': None
         }
 
-        view = View()
-        button = RaffleButton(raffle)
-        view.add_item(button)
+        view = View(raffle)
 
         # Send the initial message and store the message object
-        message = await interaction.response.send_message(
+        await interaction.response.send_message(
             f"제비뽑기 '{name}'가 생성되었습니다!\n참가자는 총 {total}명 중 {winners}명이 당첨됩니다.\n참가 가능 시간: 3분",
-            view=view,
-            wait=True
+            view=view
         )
-        raffle['message'] = message
 
         # Wait for 3 minutes or until participants are full
         await asyncio.sleep(180)
         await interaction.edit_original_response(view=None)
         await reveal_raffle_result(interaction, raffle)
-
-        if len(raffle['participants']) < total:
-            await message.edit(view=None)
-            await reveal_raffle_result(interaction, raffle)
 
 
         # /help 명령어 구현
