@@ -8,7 +8,7 @@ from commands import setup_commands
 load_dotenv()
 
 TOKEN = os.getenv('DISCORD_TOKEN')
-GUILD_ID = os.getenv('DISCORD_GUILD_ID')  # 서버 ID
+GUILD_ID = os.getenv('DISCORD_GUILD_ID')  # 개발 서버 ID
 
 if TOKEN is None:
     raise ValueError("DISCORD_TOKEN이 환경 변수로 설정되지 않았습니다.")
@@ -24,13 +24,14 @@ intents.voice_states = True  # 음성 상태 인텐트 활성화
 class MyBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix='/', intents=intents)
-        self.guild = discord.Object(id=GUILD_ID)
+        # self.guild = discord.Object(id=GUILD_ID)
 
     async def setup_hook(self):
         # 슬래시 명령어 동기화
         guild = discord.Object(id=GUILD_ID)
+        await self.tree.sync()
         self.tree.copy_global_to(guild=guild)
-        await self.tree.sync(guild=guild)
+        # await self.tree.sync(guild=guild)
 
 bot = MyBot()
 
