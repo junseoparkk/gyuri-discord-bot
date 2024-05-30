@@ -28,9 +28,9 @@ class MyBot(commands.Bot):
 
     async def setup_hook(self):
         # 슬래시 명령어 동기화
-        guild = discord.Object(id=GUILD_ID)
+        # guild = discord.Object(id=GUILD_ID)
         await self.tree.sync()
-        self.tree.copy_global_to(guild=guild)
+        # self.tree.copy_global_to(guild=guild)
         # await self.tree.sync(guild=guild)
 
 bot = MyBot()
