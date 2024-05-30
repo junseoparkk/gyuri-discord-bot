@@ -30,7 +30,7 @@ def setup_commands(bot):
         """Hello 명령어"""
         await interaction.response.send_message('안녕하세요! 🍊 나는 규리, 여러분의 귀여운 귤 친구예요! 언제나 여러분과 함께할 준비가 되어 있어요. 우리 같이 재미있는 모임을 만들고 즐거운 시간을 보내 볼까요? 어떤 모임이든, 제가 도와드릴게요!', ephemeral=False)
 
-    @bot.tree.command(name='Void')
+    @bot.tree.command(name='void')
     async def void(interaction: discord.Interaction):
         """Void 명령어"""
         image_path = 'void.png'  # 이미지 파일 경로
@@ -48,7 +48,7 @@ def setup_commands(bot):
             except Exception as followup_error:
                 print(f"후속 메시지 전송 중 오류가 발생했습니다: {followup_error}")
 
-    @bot.tree.command(name='Void2')
+    @bot.tree.command(name='void2')
     async def void2(interaction: discord.Interaction):
         """Void2 명령어"""
         image_path = 'void2.png'  # 이미지 파일 경로
