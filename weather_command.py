@@ -1,14 +1,9 @@
-import os
 import discord
 import requests
-import asyncio
-import schedule
 from datetime import datetime, timedelta
 
-
-API_KEY = os.getenv('API_KEY')
-API_URL = os.getenv('API_URL')
-
+API_KEY = 'FiL6tauqEniSps61NiC2pZKKGE9w+sxqIAdHJ026CjcNhgGvcHSP1D84XcaoAj+tXUBp8segU7OcoFNsma+asQ=='
+API_URL = 'http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst'
 
 def setup_weather_command(bot):
     @bot.tree.command(name='날씨')
