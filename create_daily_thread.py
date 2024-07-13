@@ -27,7 +27,7 @@ async def setup_create_daily_thread(bot):
         @tasks.loop(
             name=cronjob_name,
             time=[
-                datetime.time(hour=20, minute=0, second=0, tzinfo=seoul_tz),
+                datetime.time(hour=9, minute=0, second=0, tzinfo=seoul_tz),
             ]
         )
         async def breakfast():
@@ -46,7 +46,7 @@ async def setup_create_daily_thread(bot):
         @tasks.loop(
             name=cronjob_name,
             time=[
-                datetime.time(hour=20, minute=1, second=0, tzinfo=seoul_tz),
+                datetime.time(hour=13, minute=0, second=0, tzinfo=seoul_tz),
             ]
         )
         async def lunch():
@@ -66,7 +66,7 @@ async def setup_create_daily_thread(bot):
         @tasks.loop(
             name=cronjob_name,
             time=[
-                datetime.time(hour=20, minute=2, second=0, tzinfo=seoul_tz),
+                datetime.time(hour=18, minute=0, second=0, tzinfo=seoul_tz),
             ]
         )
         async def dinner():
