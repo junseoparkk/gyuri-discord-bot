@@ -56,4 +56,4 @@ def setup_help_command(bot):
             "  *사용 예시*: `/데일리_태그 add_or_delete:추가 user:@사용자1 user1:@사용자2`\n\n"
             "제가 도와드릴 수 있는 부분이 있다면 언제든지 말씀해주세요! 🍊"
         )
-        await interaction.response.send_message(help_message, ephemeral=False)
+        await interaction.response.send_message(help_message, ephemeral=True)
