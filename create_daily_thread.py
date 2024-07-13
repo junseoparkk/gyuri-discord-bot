@@ -12,6 +12,14 @@ thread_dict: dict[int, discord.Thread] = {}
 user_ids_dict: dict[int, list[int]] = {}
 
 
+def get_current_time():
+    return datetime.datetime.now(tz=seoul_tz)
+
+
+def is_weekday():
+    return datetime.datetime.now(tz=seoul_tz).weekday() < 5
+
+
 class DailyOperation(Enum):
     START = 0
     STOP = 1
@@ -31,6 +39,9 @@ async def setup_create_daily_thread(bot):
             ]
         )
         async def breakfast():
+            if not is_weekday():
+                return
+
             print(f"breakfast - {channel.name}")
 
             breakfast_message = await channel.send(
@@ -50,9 +61,11 @@ async def setup_create_daily_thread(bot):
             ]
         )
         async def lunch():
-
             if channel.id not in thread_dict:
                 print("lunch but no breakfast")
+                return
+
+            if not is_weekday():
                 return
 
             print("lunch")
@@ -72,6 +85,9 @@ async def setup_create_daily_thread(bot):
         async def dinner():
             if channel.id not in thread_dict:
                 print("dinner but no breakfast")
+                return
+
+            if not is_weekday():
                 return
 
             print("dinner")
