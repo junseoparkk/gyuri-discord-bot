@@ -2,6 +2,7 @@ import discord
 import aiohttp
 import json
 import asyncio
+from discord import app_commands
 from datetime import datetime, timedelta
 
 # 숙소
@@ -113,9 +114,8 @@ async def monitor_buses(channel):
         await asyncio.sleep(300)  # 5분마다 실행
 
 def setup_bus_command(bot):
-    @bot.tree.command(name='버스숙소')
+    @app_commands.command(name="버스숙소", description=":bus: 교육장-숙소 실시간 버스 정보를 알려드립니다.")
     async def bus_sookso(interaction: discord.Interaction):
-        """교육장-숙소 실시간 버스 정보를 알려드립니다."""
         station_id = start_stations[0]['id']
         station_name = start_stations[0]['name']
         bus_info = await fetch_bus_arrival_info(station_id)
@@ -143,9 +143,8 @@ def setup_bus_command(bot):
         message += f"규리가 매일 07:30-08:30 5분마다 교육장으로 가는 버스 정보를 알려드립니다! 🍊\n"    
         await interaction.response.send_message(message, ephemeral=False)
 
-    @bot.tree.command(name='버스교육장')
+    @app_commands.command(name="버스교육장", description=":bus: 숙소-교육장 실시간 버스 정보를 알려드립니다.")
     async def bus_gyoyukjang(interaction: discord.Interaction):
-        """숙소-교육장 실시간 버스 정보를 알려드립니다."""
         station_id = end_stations[0]['id']
         station_name = end_stations[0]['name']
         bus_info = await fetch_bus_arrival_info(station_id)
