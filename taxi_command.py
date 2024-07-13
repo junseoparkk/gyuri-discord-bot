@@ -20,12 +20,17 @@ class TaxiView(discord.ui.View):
         self.deleted = False
         self.message_id = message_id
         self.is_full = False
+        self.is_departed = False
         self.created_at = datetime.now()
 
     @discord.ui.button(label="참가", style=discord.ButtonStyle.green)
     async def join(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.deleted:
             await interaction.response.send_message("이 모집은 삭제되었어요! 🍊", ephemeral=True)
+            return
+
+        if self.is_departed:
+            await interaction.response.send_message("이미 출발했어요! 🍊", ephemeral=True)
             return
 
         if interaction.user in self.participants:
@@ -53,6 +58,10 @@ class TaxiView(discord.ui.View):
             await interaction.response.send_message("이 모집은 삭제되었어요! 🍊", ephemeral=True)
             return
 
+        if self.is_departed:
+            await interaction.response.send_message("이미 출발했어요! 🍊", ephemeral=True)
+            return
+
         if interaction.user not in self.participants:
             await interaction.response.send_message("참가하지 않으셨네요! 🍊", ephemeral=True)
         elif interaction.user == self.author:
@@ -66,15 +75,40 @@ class TaxiView(discord.ui.View):
                 await self.thread.send(f"{interaction.user.mention}님이 참가를 취소하셨어요! 🍊")
                 await interaction.message.edit(view=self)
 
+    @discord.ui.button(label="출발", style=discord.ButtonStyle.blurple)
+    async def depart(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.deleted:
+            await interaction.response.send_message("이 모집은 삭제되었어요! 🍊", ephemeral=True)
+            return
+
+        if self.is_departed:
+            await interaction.response.send_message("이미 출발했어요! 🍊", ephemeral=True)
+            return
+
+        if interaction.user != self.author:
+            await interaction.response.send_message("모임장만 출발을 할 수 있어요! 🍊", ephemeral=True)
+            return
+
+        self.is_departed = True
+        await interaction.response.send_message("택시가 출발했습니다! 🍊", ephemeral=True)
+        if self.thread:
+            mentions = ' '.join([p.mention for p in self.participants])
+            await self.thread.send(f"{mentions} 택시가 출발했습니다! 🍊")
+        
+        # 참가 및 취소 버튼 비활성화
+        self.children[0].disabled = True  # 참가 버튼
+        self.children[1].disabled = True  # 참가취소 버튼
+        await interaction.message.edit(view=self)
+
     def get_embed(self):
         """택시 모집 정보를 포함한 임베드를 생성합니다."""
         embed = discord.Embed(title="택시 모집 🍊", color=0x00ff00)
         embed.add_field(name="목적지", value=self.destination, inline=False)
         embed.add_field(name="출발 시간", value=format_time(self.time), inline=False)
+        embed.add_field(name="모집자", value=self.author.mention, inline=False)
         embed.add_field(name="모집 인원", value=f"{len(self.participants)}/{self.max_participants}", inline=False)
         participant_mentions = '\n'.join([f"- {p.mention}" for p in self.participants])
         embed.add_field(name="참가자", value=participant_mentions if participant_mentions else "없음", inline=False)
-        embed.set_footer(text=f"모임장: {self.author.name} ({self.author.id})")
         return embed
 
     def get_complete_embed(self):
@@ -82,7 +116,7 @@ class TaxiView(discord.ui.View):
         embed = discord.Embed(title="택시 모집 완료! 🍊", color=0x00ff00)
         embed.add_field(name="목적지", value=self.destination, inline=False)
         embed.add_field(name="출발 시간", value=format_time(self.time), inline=False)
-        embed.add_field(name="모임장", value=self.author.mention, inline=False)
+        embed.add_field(name="모집자", value=self.author.mention, inline=False)
         participant_mentions = '\n'.join([f"- {p.mention}" for p in self.participants])
         embed.add_field(name="참가자", value=participant_mentions, inline=False)
         return embed
@@ -199,10 +233,10 @@ async def setup_taxi_command(bot):
             original_response = await interaction.original_response()
             view.message_id = original_response.id
             unique_id = generate_unique_id()
-            thread_name = f"택시 모집 - {interaction.user.name} - {unique_id}"
+            thread_name = f"택시 모집 - {unique_id}"
             thread = await original_response.create_thread(name=thread_name, auto_archive_duration=60)
             view.thread = thread
-            await thread.send(f"택시 모집 스레드가 생성되었어요! 출발 시간: {format_time(parsed_time)} 🍊", view=view)
+            await thread.send(f"택시 모집 스레드가 생성되었어요!🍊 출발 시간: {format_time(parsed_time)} 🍊", view=view)
         except Exception as e:
             await interaction.followup.send("스레드 생성에 실패했어요. 관리자에게 문의하세요. 🍊", ephemeral=True)
             print(f"Failed to create thread: {e}")
@@ -215,7 +249,7 @@ async def setup_taxi_command(bot):
             await interaction.response.send_message("현재 참가 가능한 택시 모집이 없어요! 🍊", ephemeral=True)
             return
 
-        embeds = [discord.Embed(title="택시 모집 조회", description=f"목적지: {view.destination}\n출발 시간: {format_time(view.time)}\n모임장: {view.author.mention}", color=0x00ff00) for view in active_events.values()]
+        embeds = [discord.Embed(title="택시 모집 조회", description=f"목적지: {view.destination}\n출발 시간: {format_time(view.time)}\n모집자: {view.author.mention}", color=0x00ff00) for view in active_events.values()]
         view = TaxiListView(bot)
         await interaction.response.send_message(embeds=embeds, view=view, ephemeral=True)
 
@@ -232,7 +266,7 @@ async def setup_taxi_command(bot):
             embed = discord.Embed(title="내가 참여한 택시 모집", color=0x00ff00)
             embed.add_field(name="목적지", value=view.destination, inline=False)
             embed.add_field(name="출발 시간", value=format_time(view.time), inline=False)
-            embed.add_field(name="모임장", value=view.author.mention, inline=False)
+            embed.add_field(name="모집자", value=view.author.mention, inline=False)
             embed.add_field(name="참가자", value='\n'.join([p.mention for p in view.participants]), inline=False)
             embeds.append(embed)
 
