@@ -115,7 +115,7 @@ async def monitor_buses(channel):
 
 def setup_bus_command(bot):
     @bot.tree.command(name='버스숙소')
-    # @app_commands.command(name="버스숙소", description=":bus: 교육장-숙소 실시간 버스 정보를 알려드립니다.")
+
     async def bus_sookso(interaction: discord.Interaction):
         """🚌 교육장-숙소 실시간 버스 정보를 알려드립니다."""
         station_id = start_stations[0]['id']

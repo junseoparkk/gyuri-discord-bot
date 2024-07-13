@@ -150,29 +150,37 @@ def generate_unique_id():
 
 async def setup_taxi_command(bot):
     @app_commands.command(name="택시", description="🍊 택시 모집! 함께 가요!")
-    @app_commands.describe(destination="목적지", time="출발 시간 (예: 08:00, 2000, 9)", max_participants="모집 인원 (2-4명)")
+    @app_commands.describe(
+        목적지="목적지를 선택해주세요",
+        시간="출발 시간 (오전 8시 입력하기 : 8, 0800, 08:00)",
+        모집인원="모집 인원 (2-4명)"
+    )
     @app_commands.choices(
-        destination=[
+        목적지=[
             app_commands.Choice(name="숙소", value="숙소"),
             app_commands.Choice(name="교육장", value="교육장"),
             app_commands.Choice(name="기타", value="기타")
         ],
-        max_participants=[
+        모집인원=[
             app_commands.Choice(name="2명", value=2),
             app_commands.Choice(name="3명", value=3),
             app_commands.Choice(name="4명", value=4)
         ]
     )
-    async def taxi(interaction: discord.Interaction, destination: str, time: str, max_participants: int):
+    async def taxi(interaction: discord.Interaction, 목적지: str, 시간: str, 모집인원: int):
         """택시 모집을 생성합니다."""
         for view in bot.taxi_events.values():
             if view.author == interaction.user and not view.deleted and datetime.strptime(view.time, "%H%M") > datetime.now():
                 await interaction.response.send_message(f"{interaction.user.name}님, 이미 활성화된 택시 파티가 있어요! 먼저 삭제해주세요. 🍊", ephemeral=True)
                 return
         
-        parsed_time = parse_time(time)
+        parsed_time = parse_time(시간)
         if parsed_time is None:
-            await interaction.response.send_message("올바른 시간 형식이 아니에요. 00:00, 2000, 9와 같은 형식으로 입력해주세요. 🍊", ephemeral=True)
+            await interaction.response.send_message("올바른 시간 형식이 아니에요. 출발 시간은 다음과 같이 입력해주세요:\n"
+                                                    "- 8 입력 시 오전 8시\n"
+                                                    "- 0800 입력 시 오전 8시\n"
+                                                    "- 08:00 입력 시 오전 8시\n"
+                                                    "🍊", ephemeral=True)
             return
 
         # 현재 시간보다 이전 시간인지 확인
@@ -183,7 +191,7 @@ async def setup_taxi_command(bot):
             return
         
         event_id = len(bot.taxi_events) + 1
-        view = TaxiView(bot, interaction.guild_id, interaction.user, destination, parsed_time, max_participants)
+        view = TaxiView(bot, interaction.guild_id, interaction.user, 목적지, parsed_time, 모집인원)
         bot.taxi_events[event_id] = view
         
         await interaction.response.send_message(embed=view.get_embed(), view=view)

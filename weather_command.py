@@ -144,7 +144,7 @@ class WeatherScheduler:
 def setup_weather_command(bot):
     @bot.tree.command(name='날씨')
     async def weather(interaction: discord.Interaction):
-        """날씨 정보를 제공하는 명령어"""
+        """🍊 규리가 날씨 정보를 제공해드릴게요!"""
         await interaction.response.defer()
         weather_message = get_weather_message()
         if weather_message:

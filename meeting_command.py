@@ -8,7 +8,7 @@ def setup_meeting_command(bot):
     @bot.tree.command(name='모임')
     @app_commands.describe(name="모임 이름", invite_message="초대 메시지")
     async def create_meeting(interaction: discord.Interaction, name: str, invite_message: str):
-        """모임을 생성합니다."""
+        """🍊 규리가 소모임을 음성 채널을 만드려드려요!"""
         guild = interaction.guild
         category = discord.utils.get(guild.categories, name="모임")
         if category is None:
@@ -27,7 +27,7 @@ def setup_meeting_command(bot):
 
     @bot.tree.command(name='모임제거')
     async def delete_meeting(interaction: discord.Interaction):
-        """모임을 제거합니다."""
+        """🍊 여러분이 만든 모임을 규리가 치워드릴게요!"""
         guild = interaction.guild
         category = discord.utils.get(guild.categories, name="모임")
         if category is None:
