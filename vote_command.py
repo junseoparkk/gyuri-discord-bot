@@ -164,4 +164,3 @@ def setup_vote_command(bot):
         active_votes[title] = (channel_id, view)
         await interaction.response.send_message("투표가 성공적으로 수정되었어요! 🍊", ephemeral=True)
 
-bot.run('YOUR_BOT_TOKEN')
