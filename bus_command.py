@@ -114,7 +114,7 @@ async def monitor_buses(channel):
         await asyncio.sleep(300)  # 5분마다 실행
 
 def setup_bus_command(bot):
-    @app_commands.command(name="버스숙소", description=":bus: 교육장-숙소 실시간 버스 정보를 알려드립니다.")
+    @app_commands.command(name="버스숙소", description=":bus: 교육장-숙소 실시간 버스 정보를 알려드려요.")
     async def bus_sookso(interaction: discord.Interaction):
         station_id = start_stations[0]['id']
         station_name = start_stations[0]['name']

@@ -14,11 +14,11 @@ def number_to_emoji(number):
 def setup_roll_command(bot):
     @bot.tree.command(name='굴려')
     async def roll_command(interaction: discord.Interaction):
-        """주사위 굴리기"""
+        """🍊규리가 주사위를 굴려요!"""
         await roll_dice(interaction)
 
 async def roll_dice(interaction: discord.Interaction):
-    """1부터 100까지의 숫자 중 하나를 무작위로 반환합니다."""
+    """🍊규리가 1부터 100까지의 숫자 중 하나를 무작위로 골라줘요!"""
     roll = random.randint(1, 100)
     roll_emoji = number_to_emoji(roll)
     await interaction.response.send_message(f'🎲 {interaction.user.mention} : {roll_emoji}', ephemeral=False)

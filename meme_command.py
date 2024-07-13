@@ -30,7 +30,7 @@ class MemeView(discord.ui.View):
 def setup_meme_command(bot):
     @bot.tree.command(name='짤')
     async def meme(interaction: discord.Interaction):
-        """랜덤 짤을 제공하는 명령어"""
+        """🍊 채팅방에 사진을 소환해요!"""
         if not meme_images:
             await interaction.response.send_message('사용 가능한 짤이 없어요! 🍊', ephemeral=True)
             return
