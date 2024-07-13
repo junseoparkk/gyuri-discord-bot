@@ -26,11 +26,9 @@ async def setup_create_daily_thread(bot):
     async def create_cronjob(cronjob_name: str, channel: discord.TextChannel):
         @tasks.loop(
             name=cronjob_name,
-            minutes=5,
-            seconds=0
-            # time=[
-            #     datetime.time(hour=9, minute=0, second=0, tzinfo=seoul_tz),
-            # ]
+            time=[
+                datetime.time(hour=20, minute=0, second=0, tzinfo=seoul_tz),
+            ]
         )
         async def breakfast():
             print(f"breakfast - {channel.name}")
@@ -47,11 +45,9 @@ async def setup_create_daily_thread(bot):
 
         @tasks.loop(
             name=cronjob_name,
-            minutes=5,
-            seconds=1
-            # time=[
-            #     datetime.time(hour=13, minute=0, second=0, tzinfo=seoul_tz),
-            # ]
+            time=[
+                datetime.time(hour=20, minute=1, second=0, tzinfo=seoul_tz),
+            ]
         )
         async def lunch():
 
@@ -69,11 +65,9 @@ async def setup_create_daily_thread(bot):
 
         @tasks.loop(
             name=cronjob_name,
-            minutes=5,
-            seconds=2
-            # time=[
-            #     datetime.time(hour=18, minute=0, second=0, tzinfo=seoul_tz),
-            # ]
+            time=[
+                datetime.time(hour=20, minute=2, second=0, tzinfo=seoul_tz),
+            ]
         )
         async def dinner():
             if channel.id not in thread_dict:
