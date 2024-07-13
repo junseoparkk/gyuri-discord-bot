@@ -16,6 +16,7 @@ if TOKEN is None:
 intents = discord.Intents.default()
 intents.message_content = True
 
+
 class MyBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix='/', intents=intents)
@@ -26,12 +27,15 @@ class MyBot(commands.Bot):
         await setup_commands(self)
         await bot.tree.sync()
 
+
 bot = MyBot()
 
 @bot.event
 async def on_ready():
     print(f'{bot.user}로 로그인했습니다! 🍊')
     await bot.change_presence(status=discord.Status.online, activity=discord.Game("대기중 🍊"))
+    if hasattr(bot, 'scheduler'):
+        bot.scheduler.start()
 
 @bot.event
 async def on_command_error(ctx, error):
