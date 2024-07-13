@@ -38,7 +38,8 @@ setup_commands(bot)
 async def on_ready():
     print(f'{bot.user}로 로그인했습니다!')
     await bot.change_presence(status=discord.Status.online, activity=discord.Game("대기중"))
-
+    if hasattr(bot, 'scheduler'):
+        bot.scheduler.start()
 
 @bot.event
 async def on_command_error(ctx, error):
