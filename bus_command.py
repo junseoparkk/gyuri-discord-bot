@@ -69,17 +69,17 @@ async def fetch_route_info(routeId, station_id, route_type):
     return {}
 
 async def monitor_buses(channel):
-    bus_icon = ":bus:"
+     
     while True:
         current_time_str = datetime.now().strftime('%H:%M')
-        if '07:30' <= current_time_str <= '13:30':
+        if '07:30' <= current_time_str <= '21:00':
             stations = start_stations
             route_type = 'start'
             direction_message = "07:30-08:30 5분마다 교육장으로 가는"
-        elif '21:00' <= current_time_str <= '23:00':
+        elif '21:30' <= current_time_str <= '23:00':
             stations = end_stations
             route_type = 'end'
-            direction_message = "21:00-23:00 5분마다 숙소로 향하는"
+            direction_message = "21:30-23:00 5분마다 숙소로 향하는"
         else:
             await asyncio.sleep(300)
             continue
@@ -98,7 +98,7 @@ async def monitor_buses(channel):
                 message += f"🌿 **버스가 곧 도착합니다!** 🌿\n\n"
                 for predictTravTm, routeId, arrival_time, leftStation in bus_info:
                     if routeId in bus_start_routes.get(station_id, {}) or routeId in bus_end_routes.get(station_id, {}):
-                        message += f"{bus_icon} **{routeId}번 버스** - {predictTravTm}분 뒤 도착 \n\t\t도착 시각 **{arrival_time}** \n\t\t{leftStation} 정류장 전\n"
+                        message += f"🚌 **{routeId}번 버스** - {predictTravTm}분 뒤 도착 \n\t\t도착 시각 **{arrival_time}** \n\t\t{leftStation} 정류장 전\n"
                         route_info = await fetch_route_info(routeId, station_id, route_type)
                         if route_info:
                             if route_info.get('type') == '직행':
@@ -114,8 +114,10 @@ async def monitor_buses(channel):
         await asyncio.sleep(300)  # 5분마다 실행
 
 def setup_bus_command(bot):
-    @app_commands.command(name="버스숙소", description=":bus: 교육장-숙소 실시간 버스 정보를 알려드려요.")
+    @bot.tree.command(name='버스숙소')
+
     async def bus_sookso(interaction: discord.Interaction):
+        """🚌 교육장-숙소 실시간 버스 정보를 알려드립니다."""
         station_id = start_stations[0]['id']
         station_name = start_stations[0]['name']
         bus_info = await fetch_bus_arrival_info(station_id)
@@ -126,11 +128,10 @@ def setup_bus_command(bot):
         if not bus_info:
             message += f"🌿 **도착 예정 버스가 없습니다 ㅠㅠ** 🌿\n\n"
         else:
-            bus_icon = ":bus:"
             message += f"🌿 **버스가 곧 도착합니다!** 🌿\n\n"
             for predictTravTm, routeId, arrival_time, leftStation in bus_info:
                 if routeId in bus_start_routes.get(station_id, {}):
-                    message += f"{bus_icon} **{routeId}번 버스** - {predictTravTm}분 뒤 도착 \n\t\t도착 시각 **{arrival_time}** \n\t\t{leftStation} 정류장 전\n"
+                    message += f"🚌 **{routeId}번 버스** - {predictTravTm}분 뒤 도착 \n\t\t도착 시각 **{arrival_time}** \n\t\t{leftStation} 정류장 전\n"
                     route_info = await fetch_route_info(routeId, station_id, 'start')
                     if route_info:
                         if route_info.get('type') == '직행':
@@ -143,8 +144,10 @@ def setup_bus_command(bot):
         message += f"규리가 매일 07:30-08:30 5분마다 교육장으로 가는 버스 정보를 알려드립니다! 🍊\n"    
         await interaction.response.send_message(message, ephemeral=False)
 
-    @app_commands.command(name="버스교육장", description=":bus: 숙소-교육장 실시간 버스 정보를 알려드립니다.")
+    @bot.tree.command(name='버스교육장')
+    # @app_commands.command(name="버스교육장", description=":bus: 숙소-교육장 실시간 버스 정보를 알려드립니다.")
     async def bus_gyoyukjang(interaction: discord.Interaction):
+        """🚌 숙소-교육장 실시간 버스 정보를 알려드립니다."""
         station_id = end_stations[0]['id']
         station_name = end_stations[0]['name']
         bus_info = await fetch_bus_arrival_info(station_id)
@@ -155,12 +158,11 @@ def setup_bus_command(bot):
         if not bus_info:
             message += f"🌿 **도착 예정 버스가 없습니다 ㅠㅠ** 🌿\n\n"
             await interaction.response.send_message(message, ephemeral=False)
-        else:
-            bus_icon = ":bus:"
+        else:             
             message += f"🌿 **버스가 곧 도착합니다!** 🌿\n\n"
             for predictTravTm, routeId, arrival_time, leftStation in bus_info:
                 if routeId in bus_end_routes.get(station_id, {}):
-                    message += f"{bus_icon} **{routeId}번 버스** - {predictTravTm}분 뒤 도착 \n\t\t도착 시각 **{arrival_time}** \n\t\t{leftStation} 정류장 전\n"
+                    message += f"🚌 **{routeId}번 버스** - {predictTravTm}분 뒤 도착 \n\t\t도착 시각 **{arrival_time}** \n\t\t{leftStation} 정류장 전\n"
                     route_info = await fetch_route_info(routeId, station_id, 'end')
                     if route_info:
                         if route_info.get('type') == '직행':
@@ -170,5 +172,5 @@ def setup_bus_command(bot):
                             message += f"\t\t🚏 (환승 - {transfer['routeNum']}번 {transfer['stationNm']}) 소요시간 : {route_info['totalTime']}분\n\n"
         
         message += "🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿\n"
-        message += f"규리가 매일 21:00-23:00 5분마다 숙소로 향하는 버스 정보를 알려드립니다! 🍊\n"    
+        message += f"규리가 매일 21:30-23:00 5분마다 숙소로 향하는 버스 정보를 알려드립니다! 🍊\n"    
         await interaction.response.send_message(message, ephemeral=False)
