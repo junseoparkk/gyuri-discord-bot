@@ -10,7 +10,10 @@ load_dotenv()
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD_ID = os.getenv('DISCORD_GUILD_ID')
+BUS_CID = os.getenv('BUS_CID')
 
+if BUS_CID is None:
+    raise ValueError("CHANNEL_ID is not set in the environment variables")
 if TOKEN is None:
     raise ValueError("DISCORD_TOKEN이 환경 변수로 설정되지 않았습니다.")
 if GUILD_ID is None:
@@ -46,10 +49,10 @@ async def on_ready():
         
     guild = discord.utils.get(bot.guilds, id=bot.guild_id)
     if guild:
-        channel = discord.utils.get(guild.text_channels, name='버스정보')  # 채널 이름을 지정
+        channel = await bot.fetch_channel(int(BUS_CID))
         if channel:
             print(f"Channel fetched: {channel.name}")
-            bot.loop.create_task(monitor_buses(channel))
+            await bot.loop.create_task(monitor_buses(channel))
         else:
             print("Channel '버스정보' not found. Please check the channel name.")
     else:
