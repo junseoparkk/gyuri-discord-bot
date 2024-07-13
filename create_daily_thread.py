@@ -33,15 +33,15 @@ async def setup_create_daily_thread(bot):
             # ]
         )
         async def breakfast():
-            print("breakfast")
+            print(f"breakfast - {channel.name}")
 
             breakfast_message = await channel.send(
-                f"좋은 아침! {channel.name}\n"
+                f"좋은 아침이에요!☀️ QR 잊지마세요! 🍊\n"
                 f"{get_mention_message(channel)}\n"
                 f"[출석체크 QR](https://goorm.notion.site/e9d381e31aa641499c40c72891d28a30?v=6aab6156142d4164a98b301c52763863)"
             )
             breakfast_thread = await breakfast_message.create_thread(
-                name=datetime.datetime.now().strftime("%y/%m/%d %H:%M:%S"),
+                name=datetime.datetime.now().strftime("%y/%m/%d"),
             )
             thread_dict[channel.id] = breakfast_thread
 
@@ -61,7 +61,8 @@ async def setup_create_daily_thread(bot):
 
             print("lunch")
             await thread_dict[channel.id].send(
-                content="time to lunch\n"
+                content="점심 맛있게 드셨나요? QR도 잊지마세요! 🍊\n"
+                        f"{get_mention_message(channel)}\n"
                         "[출석체크 QR](https://goorm.notion.site/e9d381e31aa641499c40c72891d28a30?v=6aab6156142d4164a98b301c52763863)"
             )
 
@@ -80,7 +81,8 @@ async def setup_create_daily_thread(bot):
 
             print("dinner")
             await thread_dict[channel.id].send(
-                content="time to dinner\n"
+                content="오늘 하루도 고생많으셨어요!👋🏻 퇴실 QR도 잊지마세요! 🍊\n"
+                        f"{get_mention_message(channel)}\n"
                         "[출석체크 QR](https://goorm.notion.site/e9d381e31aa641499c40c72891d28a30?v=6aab6156142d4164a98b301c52763863)"
             )
 
@@ -89,7 +91,7 @@ async def setup_create_daily_thread(bot):
     async def start_daily(interaction: discord.Interaction, channel: discord.TextChannel):
         if channel.id in cronjob_dict:
             return await interaction.response.send_message(
-                f"{interaction.channel.name} 데일리 시작할 수 없습니다.\n 이미 존재하는 데일리입니다."
+                f"{channel.name}(은)는 이미 일일 스레드를 생성하고 있던 곳이에요. 🍊"
             )
 
         cronjob_tuple = await create_cronjob(f"daily_cronjob : {channel.id}", channel)
@@ -97,12 +99,12 @@ async def setup_create_daily_thread(bot):
             cronjob.start()
         cronjob_dict[channel.id] = cronjob_tuple
 
-        await interaction.response.send_message(f"{channel.name} 데일리 시작")
+        await interaction.response.send_message(f"{channel.name} 에서 일일 스레드를 만들게요! 🍊")
 
     async def stop_daily(interaction: discord.Interaction, channel: discord.TextChannel = None):
         if not channel.id in cronjob_dict:
             return await interaction.response.send_message(
-                f"{channel.name} 데일리 정지할 수 없습니다.\n 존재하지 않는 데일리입니다."
+                f"{channel.name}(은)는 일일 스레드 목록에 없어요. 🍊"
             )
 
         cronjob_tuple = cronjob_dict[channel.id]
@@ -110,9 +112,42 @@ async def setup_create_daily_thread(bot):
             cronjob.cancel()
         del cronjob_dict[channel.id]
 
-        await interaction.response.send_message(f"{channel.name} 데일리 정지")
+        await interaction.response.send_message(f"이제 {channel.name} 에서 더 이상 일일 스레드를 만들지 않아요! 🍊")
 
-    @bot.tree.command(name="데일리", description="데일리 시작")
+    async def add_members(members: list[discord.User], interaction: discord.Interaction):
+        # 처음 추가하는 경우
+        if interaction.channel.id not in user_ids_dict:
+            user_ids_dict[interaction.channel.id] = [member.id for member in members]
+        # 사람을 이전에 추가한 경우
+        else:
+            for member in members:
+                if member.id not in user_ids_dict[interaction.channel.id]:
+                    print(f"사람 추가 : {member.name}")
+                    user_ids_dict[interaction.channel.id].append(member.id)
+        await interaction.response.send_message(f"{','.join([member.mention for member in members])} 에게 알림을 드릴게요! 🍊")
+
+    async def delete_members(members: list[discord.User], interaction: discord.Interaction):
+        # 처음 추가하는 경우
+        if interaction.channel.id not in user_ids_dict:
+            return
+        # 사람을 이전에 추가한 경우
+        else:
+            for member in members:
+                if member.id in user_ids_dict[interaction.channel.id]:
+                    print(f"사람 삭제 : {member.name}")
+                    user_ids_dict[interaction.channel.id].remove(member.id)
+        await interaction.response.send_message(
+            f"{','.join([member.mention for member in members])} 에게 더이상 알림 드리지 않아요! 🍊")
+
+    def get_mention_message(channel: discord.TextChannel):
+        if channel.id not in user_ids_dict:
+            return ""
+        return ",".join(mention_user(user_id) for user_id in user_ids_dict[channel.id])
+
+    def mention_user(user_id: int):
+        return f'<@{user_id}>'
+
+    @bot.tree.command(name="데일리", description="🍊 규리가 데일리 스레드를 만들게요!")
     @app_commands.describe(start_or_stop="시작 or 정지", channel="텍스트 채널", )
     @app_commands.choices(start_or_stop=[
         app_commands.Choice(name="시작", value=DailyOperation.START.value),
@@ -124,13 +159,13 @@ async def setup_create_daily_thread(bot):
             channel: discord.TextChannel,
     ):
         if start_or_stop.value == DailyOperation.START.value:
-            print(f"{channel} 시작 req")
+            print(f"## {channel} 데일리 시작 req")
             await start_daily(interaction, channel)
         else:
-            print(f"{channel.name} 정지 req")
+            print(f"## {channel.name} 데일리 정지 req")
             await stop_daily(interaction, channel)
 
-    @bot.tree.command(name="데일리_태그", description="데일리 태그 사람 추가")
+    @bot.tree.command(name="데일리_태그", description="🍊 알림에 맨션할 사람을 추가해요!")
     @app_commands.choices(add_or_delete=[
         app_commands.Choice(name="추가", value=DailyMemberOperation.ADD.value),
         app_commands.Choice(name="삭제", value=DailyMemberOperation.DELETE.value)
@@ -158,35 +193,3 @@ async def setup_create_daily_thread(bot):
         else:
             print("삭제")
             await delete_members(members, interaction)
-
-    async def add_members(members: list[discord.User], interaction: discord.Interaction):
-        # 처음 추가하는 경우
-        if interaction.channel.id not in user_ids_dict:
-            user_ids_dict[interaction.channel.id] = [member.id for member in members]
-        # 사람을 이전에 추가한 경우
-        else:
-            for member in members:
-                if member.id not in user_ids_dict[interaction.channel.id]:
-                    print(f"사람 추가 : {member.name}")
-                    user_ids_dict[interaction.channel.id].append(member.id)
-        await interaction.response.send_message(f"추가되었습니다 :{[member.mention for member in members]}")
-
-    async def delete_members(members: list[discord.User], interaction: discord.Interaction):
-        # 처음 추가하는 경우
-        if interaction.channel.id not in user_ids_dict:
-            return
-        # 사람을 이전에 추가한 경우
-        else:
-            for member in members:
-                if member.id in user_ids_dict[interaction.channel.id]:
-                    print(f"사람 삭제 : {member.name}")
-                    user_ids_dict[interaction.channel.id].remove(member.id)
-        await interaction.response.send_message(f"삭제되었습니다 :{','.join([member.mention for member in members])}")
-
-    def get_mention_message(channel: discord.TextChannel):
-        if channel.id not in user_ids_dict:
-            return ""
-        return ",".join(mention_user(user_id) for user_id in user_ids_dict[channel.id])
-
-    def mention_user(user_id: int):
-        return f'<@{user_id}>'
