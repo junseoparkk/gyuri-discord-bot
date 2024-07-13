@@ -25,7 +25,7 @@ async def setup_commands(bot):
     # 날씨 정보 명령어 설정
     setup_weather_command(bot)
     
-    # 버스 정보 명령어 설정
+    # 버스 정보 명령어 설정 및 자동 모니터링
     setup_bus_command(bot)
     
     # 택시 정보 명령어 설정
