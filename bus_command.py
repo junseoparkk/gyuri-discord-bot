@@ -151,16 +151,19 @@ async def monitor_buses(channel):
             else:
                 message += f"🌿 **버스가 곧 도착합니다!** 🌿\n\n"
                 for predictTravTm, routeId, arrival_time, leftStation in bus_info:
-                    if routeId in bus_start_routes.get(station_id, {}) or routeId in bus_end_routes.get(station_id, {}):
-                        message += f"🚌 **{routeId}번 버스** - {predictTravTm}분 뒤 도착 \n\t\t도착 시각 **{arrival_time}** \n\t\t{leftStation} 정류장 전\n"
-                        route_info = await fetch_route_info(routeId, station_id, route_type)
-                        if route_info:
-                            if route_info.get('type') == '직행':
-                                message += f"\t\t🚏 (직행) 소요시간 : {route_info['totalTime']}분\n\n"
-                            elif route_info.get('type') == '환승':
-                                transfer = route_info['transfer']
-                                message += f"\t\t🚏 (환승 - {transfer['routeNum']}번 {transfer['stationNm']}) 소요시간 : {route_info['totalTime']}분\n\n"
-
+                    route_info_list = await fetch_route_info(routeId, station_id, route_type)
+                    for route_info in route_info_list:
+                        if route_info['type'] == '직행':
+                            message += f"{bus_icon} **{routeId}번 버스** - {predictTravTm}분 뒤 도착 **(직행)** {bus_icon}\n\t\t{leftStation} 정류장 전 / 도착 시각 **{arrival_time}**\n"
+                            message += f"\t\t소요시간 : {route_info['totalTime']}분\n\t\t(숙소-정류장) {route_info['start_walk']}분 걷기\n\t\t(버스) {route_info['bus_ride']}분\n\t\t(정류장-교육장) {route_info['end_walk']}분 걷기\n\n"
+                        elif route_info['type'] == '환승':
+                            transfer = route_info['transfer']
+                            transfer_predictTravTm, transfer_arrival_time = await fetch_transfer_bus_info(station_id, transfer['routeNum'])
+                            possible_routes = ", ".join(transfer['possible_routes'])
+                            message += f"{bus_icon} **{routeId}번 버스** - {predictTravTm}분 뒤 도착 **(환승)** {bus_icon}\n\t\t{leftStation} 정류장 전 / 도착 시각 **{arrival_time}**\n"
+                            message += f"\t\t**환승정보** : {transfer['stationNm']} {transfer['routeNum']}번 {transfer_predictTravTm}분 뒤 도착 ({possible_routes}도 가능)\n"
+                            message += f"\t\t**소요시간** : {route_info['totalTime']}분\n\t\t(숙소-정류장) {route_info['start_walk']}분 걷기\n\t\t(버스) {route_info['bus_ride']}분\n\t\t(환승) {transfer['stationNm']}\n\t\t(버스) {transfer['routeNum']} {route_info['bus_ride']}분\n\t\t(정류장-교육장) {route_info['end_walk']}분 걷기\n\n"
+            
         message += "🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿\n"
         message += f"규리가 매일 {direction_message} 버스 정보를 알려드립니다! 🍊\n"
         await channel.send(message)
@@ -184,18 +187,19 @@ def setup_bus_command(bot):
         else:
             message += f"🌿**버스가 곧 도착합니다!** 🌿\n\n"
             for predictTravTm, routeId, arrival_time, leftStation in bus_info:
-                if routeId in bus_start_routes.get(station_id, {}):
-                    message += f"🚌 **{routeId}번 버스** - {predictTravTm}분 뒤 도착 \n\t\t도착 시각 **{arrival_time}** \n\t\t{leftStation} 정류장 전\n"
-                    route_info = await fetch_route_info(routeId, station_id, 'start')
-                    if route_info:
-                        if route_info.get('type') == '직행':
-                            message += f"\t\t🚏 (직행) 소요시간 : {route_info['totalTime']}분\n\n"
-                        elif route_info.get('type') == '환승':
-                            transfer = route_info['transfer']
-                            message += f"\t\t🚏 (환승 - {transfer['routeNum']}번 {transfer['stationNm']}) 소요시간 : {route_info['totalTime']}분\n\n"
-
-        message += "🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿\n"
-        message += f"규리가 매일 07:30-08:30 5분마다 교육장으로 가는 버스 정보를 알려드립니다! 🍊\n"
+                route_info_list = await fetch_route_info(routeId, station_id, 'start')
+                for route_info in route_info_list:
+                    if route_info['type'] == '직행':
+                        message += f"{bus_icon} **{routeId}번 버스** - {predictTravTm}분 뒤 도착 **(직행)** {bus_icon}\n\t\t{leftStation} 정류장 전 / 도착 시각 **{arrival_time}**\n"
+                        message += f"\t\t소요시간 : {route_info['totalTime']}분\n\t\t(숙소-정류장) {route_info['start_walk']}분 걷기\n\t\t(버스) {route_info['bus_ride']}분\n\t\t(정류장-교육장) {route_info['end_walk']}분 걷기\n\n"
+                    elif route_info['type'] == '환승':
+                        transfer = route_info['transfer']
+                        transfer_predictTravTm, transfer_arrival_time = await fetch_transfer_bus_info(station_id, transfer['routeNum'])
+                        possible_routes = ", ".join(transfer['possible_routes'])
+                        message += f"{bus_icon} **{routeId}번 버스** - {predictTravTm}분 뒤 도착 **(환승)** {bus_icon}\n\t\t{leftStation} 정류장 전 / 도착 시각 **{arrival_time}**\n"
+                        message += f"\t\t**환승정보** : {transfer['stationNm']} {transfer['routeNum']}번 {transfer_predictTravTm}분 뒤 도착 ({possible_routes}도 가능)\n"
+                        message += f"\t\t**소요시간** : {route_info['totalTime']}분\n\t\t(숙소-정류장) {route_info['start_walk']}분 걷기\n\t\t(버스 {routeId}) {route_info['bus_ride']}분\n\t\t(환승) {transfer['stationNm']}\n\t\t(버스 {transfer['routeNum']}) {route_info['bus_ride']}분\n\t\t(정류장-교육장) {route_info['end_walk']}분 걷기\n\n"
+            
         await interaction.response.send_message(message, ephemeral=False)
 
     @bot.tree.command(name='버스교육장')
