@@ -44,7 +44,7 @@ def get_current_time():
 
 def is_time_between(begin_time, end_time, check_time=None):
     # 현재 시간을 가져옵니다.
-    check_time = check_time or get_current_time().time()
+    check_time = check_time or get_current_time().timetz()
 
     if begin_time < end_time:
         return begin_time <= check_time <= end_time
