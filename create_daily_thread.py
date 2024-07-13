@@ -26,7 +26,7 @@ async def setup_create_daily_thread(bot):
     async def create_cronjob(cronjob_name: str, channel: discord.TextChannel):
         @tasks.loop(
             name=cronjob_name,
-            minutes=20,
+            minutes=5,
             seconds=0
             # time=[
             #     datetime.time(hour=9, minute=0, second=0, tzinfo=seoul_tz),
@@ -37,8 +37,8 @@ async def setup_create_daily_thread(bot):
 
             breakfast_message = await channel.send(
                 f"좋은 아침이에요!☀️ QR 잊지마세요! 🍊\n"
-                f"{get_mention_message(channel)}\n"
-                f"[출석체크 QR](https://goorm.notion.site/e9d381e31aa641499c40c72891d28a30?v=6aab6156142d4164a98b301c52763863)"
+                f"{get_mention_message(channel)}\n",
+                file=discord.File("./meme/qr.png", filename="qr.png")
             )
             breakfast_thread = await breakfast_message.create_thread(
                 name=datetime.datetime.now().strftime("%y/%m/%d"),
@@ -47,7 +47,7 @@ async def setup_create_daily_thread(bot):
 
         @tasks.loop(
             name=cronjob_name,
-            minutes=20,
+            minutes=5,
             seconds=1
             # time=[
             #     datetime.time(hour=13, minute=0, second=0, tzinfo=seoul_tz),
@@ -60,15 +60,16 @@ async def setup_create_daily_thread(bot):
                 return
 
             print("lunch")
+
             await thread_dict[channel.id].send(
                 content="점심 맛있게 드셨나요? QR도 잊지마세요! 🍊\n"
-                        f"{get_mention_message(channel)}\n"
-                        "[출석체크 QR](https://goorm.notion.site/e9d381e31aa641499c40c72891d28a30?v=6aab6156142d4164a98b301c52763863)"
+                        f"{get_mention_message(channel)}\n",
+                file=discord.File("./meme/qr.png", filename="qr.png")
             )
 
         @tasks.loop(
             name=cronjob_name,
-            minutes=20,
+            minutes=5,
             seconds=2
             # time=[
             #     datetime.time(hour=18, minute=0, second=0, tzinfo=seoul_tz),
@@ -81,9 +82,9 @@ async def setup_create_daily_thread(bot):
 
             print("dinner")
             await thread_dict[channel.id].send(
-                content="오늘 하루도 고생많으셨어요!👋🏻 퇴실 QR도 잊지마세요! 🍊\n"
-                        f"{get_mention_message(channel)}\n"
-                        "[출석체크 QR](https://goorm.notion.site/e9d381e31aa641499c40c72891d28a30?v=6aab6156142d4164a98b301c52763863)"
+                content="오늘 하루도 고생많으셨어요!👋🏻\n 퇴실 QR도 잊지마세요! 🍊\n"
+                        f"{get_mention_message(channel)}\n",
+                file=discord.File("./meme/qr.png", filename="qr.png")
             )
 
         return breakfast, lunch, dinner
@@ -127,11 +128,8 @@ async def setup_create_daily_thread(bot):
         await interaction.response.send_message(f"{','.join([member.mention for member in members])} 에게 알림을 드릴게요! 🍊")
 
     async def delete_members(members: list[discord.User], interaction: discord.Interaction):
-        # 처음 추가하는 경우
-        if interaction.channel.id not in user_ids_dict:
-            return
-        # 사람을 이전에 추가한 경우
-        else:
+        # 이미 일전에 추가한 경우
+        if interaction.channel.id in user_ids_dict:
             for member in members:
                 if member.id in user_ids_dict[interaction.channel.id]:
                     print(f"사람 삭제 : {member.name}")
