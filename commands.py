@@ -7,6 +7,7 @@ from taxi_command import setup_taxi_command
 from meme_command import setup_meme_command
 from vote_command import setup_vote_command
 from meeting_command import setup_meeting_command
+from create_daily_thread import setup_create_daily_thread
 
 async def setup_commands(bot):
     """
@@ -38,3 +39,5 @@ async def setup_commands(bot):
     
     # 모임 생성 및 관리 명령어 설정
     setup_meeting_command(bot)
+
+    await setup_create_daily_thread(bot)
