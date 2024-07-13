@@ -8,7 +8,7 @@ from meme_command import setup_meme_command
 from vote_command import setup_vote_command
 from meeting_command import setup_meeting_command
 
-def setup_commands(bot):
+async def setup_commands(bot):
     """
     모든 명령어를 설정합니다.
     """
@@ -28,7 +28,7 @@ def setup_commands(bot):
     setup_bus_command(bot)
     
     # 택시 정보 명령어 설정
-    setup_taxi_command(bot)
+    await setup_taxi_command(bot)
     
     # 랜덤 짤 명령어 설정
     setup_meme_command(bot)
