@@ -156,7 +156,7 @@ async def generate_message(stations, route_type):
                 message += f"**`곧 도착` {station_name} ({arrival_time}) / {leftStation} 정류장 전**\n"
             else:
                 message += f"{bus_icon} **{routeId}번 (직행) {route_info['totalTime']}분 소요**\n"
-                message += f"**`{predictTravTm}분 뒤` {station_name} 도착 ({arrival_time}) / {leftStation} 정류장 전**\n"
+                message += f"**`{predictTravTm}분뒤` {station_name} 도착 ({arrival_time}) / {leftStation} 정류장 전**\n"
             message += f"({station_name}-{route_info['arrive']})\n\n"
         elif route_info['type'] == '환승':
             transfer = route_info['transfer']
@@ -165,7 +165,7 @@ async def generate_message(stations, route_type):
                 message += f"**`곧 도착` {station_name} ({arrival_time}) / {leftStation} 정류장 전**\n"
             else:
                 message += f"{bus_icon} **{routeId}번 (환승) {route_info['totalTime']}분 소요**\n"
-                message += f"**`{predictTravTm}분 뒤` {station_name} 도착 ({arrival_time}) / {leftStation} 정류장 전**\n"
+                message += f"**`{predictTravTm}분뒤` {station_name} 도착 ({arrival_time}) / {leftStation} 정류장 전**\n"
             message += f"({station_name}-{transfer}-{route_info['arrive']})\n\n"
 
     if buses_within_10_minutes > 0:

@@ -3,11 +3,15 @@ from discord.ext import commands
 from discord import app_commands
 from datetime import datetime, timedelta
 import asyncio
+import json
+import os
 import random
 import string
 
+DATA_FILE = 'taxi_events.json'
+
 class TaxiView(discord.ui.View):
-    def __init__(self, bot, guild_id, author, destination, time, max_participants, message_id=None):
+    def __init__(self, bot, guild_id, author, destination, time, max_participants, message_id=None, participants=None, created_at=None):
         super().__init__(timeout=None)
         self.bot = bot
         self.guild_id = guild_id
@@ -15,13 +19,13 @@ class TaxiView(discord.ui.View):
         self.destination = destination
         self.time = time
         self.max_participants = max_participants
-        self.participants = [author]
+        self.participants = participants if participants else [author]
         self.thread = None
         self.deleted = False
         self.message_id = message_id
         self.is_full = False
         self.is_departed = False
-        self.created_at = datetime.now()
+        self.created_at = created_at if created_at else datetime.now()
 
     @discord.ui.button(label="참가", style=discord.ButtonStyle.green)
     async def join(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -51,6 +55,7 @@ class TaxiView(discord.ui.View):
                     mentions = ' '.join([p.mention for p in self.participants])
                     await self.thread.send(f"{mentions} 모두 모였어요! 🍊")
                 self.schedule_departure_alert()
+            self.save_event()
 
     @discord.ui.button(label="참가취소", style=discord.ButtonStyle.red)
     async def leave(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -74,6 +79,7 @@ class TaxiView(discord.ui.View):
             if self.thread:
                 await self.thread.send(f"{interaction.user.mention}님이 참가를 취소하셨어요! 🍊")
                 await interaction.message.edit(view=self)
+            self.save_event()
 
     @discord.ui.button(label="출발", style=discord.ButtonStyle.blurple)
     async def depart(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -99,13 +105,14 @@ class TaxiView(discord.ui.View):
         self.children[0].disabled = True  # 참가 버튼
         self.children[1].disabled = True  # 참가취소 버튼
         await interaction.message.edit(view=self)
+        self.save_event()
 
     def get_embed(self):
         """택시 모집 정보를 포함한 임베드를 생성합니다."""
         embed = discord.Embed(title="택시 모집 🍊", color=0x00ff00)
         embed.add_field(name="목적지", value=self.destination, inline=False)
         embed.add_field(name="출발 시간", value=format_time(self.time), inline=False)
-        embed.add_field(name="모집자", value=self.author.mention, inline=False)
+        embed.add_field(name="모집자", value=self.author.mention if self.author else "Unknown", inline=False)
         embed.add_field(name="모집 인원", value=f"{len(self.participants)}/{self.max_participants}", inline=False)
         participant_mentions = '\n'.join([f"- {p.mention}" for p in self.participants])
         embed.add_field(name="참가자", value=participant_mentions if participant_mentions else "없음", inline=False)
@@ -116,7 +123,7 @@ class TaxiView(discord.ui.View):
         embed = discord.Embed(title="택시 모집 완료! 🍊", color=0x00ff00)
         embed.add_field(name="목적지", value=self.destination, inline=False)
         embed.add_field(name="출발 시간", value=format_time(self.time), inline=False)
-        embed.add_field(name="모집자", value=self.author.mention, inline=False)
+        embed.add_field(name="모집자", value=self.author.mention if self.author else "Unknown", inline=False)
         participant_mentions = '\n'.join([f"- {p.mention}" for p in self.participants])
         embed.add_field(name="참가자", value=participant_mentions, inline=False)
         return embed
@@ -144,6 +151,68 @@ class TaxiView(discord.ui.View):
         if self.thread:
             await self.thread.send(f"{mentions} 출발 시간이 {minutes}분 남았어요! 🍊")
 
+    def save_event(self):
+        """택시 모집 정보를 파일에 저장합니다."""
+        event_data = {
+            'guild_id': self.guild_id,
+            'author': self.author.id if self.author else None,
+            'destination': self.destination,
+            'time': self.time,
+            'max_participants': self.max_participants,
+            'participants': [p.id for p in self.participants],
+            'message_id': self.message_id,
+            'created_at': self.created_at.isoformat(),
+            'is_full': self.is_full,
+            'is_departed': self.is_departed,
+            'deleted': self.deleted
+        }
+        
+        if os.path.exists(DATA_FILE):
+            with open(DATA_FILE, 'r', encoding='utf-8') as f:
+                try:
+                    data = json.load(f)
+                except json.JSONDecodeError:
+                    data = {}
+        else:
+            data = {}
+
+        data[self.message_id] = event_data
+
+        with open(DATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4)
+
+    @staticmethod
+    async def load_events(bot):
+        """파일에서 택시 모집 정보를 불러옵니다."""
+        if not os.path.exists(DATA_FILE):
+            return
+
+        with open(DATA_FILE, 'r', encoding='utf-8') as f:
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                data = {}
+
+        for message_id, event_data in data.items():
+            author = await bot.fetch_user(event_data['author']) if event_data['author'] else None
+            participants = [await bot.fetch_user(user_id) for user_id in event_data['participants']]
+            created_at = datetime.fromisoformat(event_data['created_at'])
+            view = TaxiView(
+                bot,
+                event_data['guild_id'],
+                author,
+                event_data['destination'],
+                event_data['time'],
+                event_data['max_participants'],
+                message_id=message_id,
+                participants=participants,
+                created_at=created_at
+            )
+            view.is_full = event_data['is_full']
+            view.is_departed = event_data['is_departed']
+            view.deleted = event_data['deleted']
+            bot.taxi_events[message_id] = view
+
 class TaxiListView(discord.ui.View):
     def __init__(self, bot):
         super().__init__(timeout=None)
@@ -154,7 +223,7 @@ class TaxiListView(discord.ui.View):
         """택시 목록 뷰를 업데이트합니다."""
         self.clear_items()
         for event_id, view in self.bot.taxi_events.items():
-            if view.message_id and view.thread and not view.is_full:
+            if view.message_id and view.thread and not view.is_full and not view.is_departed and not view.deleted:
                 button = discord.ui.Button(label=f"{view.destination} - {format_time(view.time)}", style=discord.ButtonStyle.link, url=f"https://discord.com/channels/{view.guild_id}/{view.thread.id}/{view.message_id}")
                 self.add_item(button)
 
@@ -224,7 +293,7 @@ async def setup_taxi_command(bot):
             await interaction.response.send_message("현재 시간보다 이전 시간으로 택시를 잡을 수 없어요! 🍊", ephemeral=True)
             return
         
-        event_id = len(bot.taxi_events) + 1
+        event_id = generate_unique_id()
         view = TaxiView(bot, interaction.guild_id, interaction.user, 목적지, parsed_time, 모집인원)
         bot.taxi_events[event_id] = view
         
@@ -237,6 +306,7 @@ async def setup_taxi_command(bot):
             thread = await original_response.create_thread(name=thread_name, auto_archive_duration=60)
             view.thread = thread
             await thread.send(f"택시 모집 스레드가 생성되었어요!🍊 출발 시간: {format_time(parsed_time)} 🍊", view=view)
+            view.save_event()
         except Exception as e:
             await interaction.followup.send("스레드 생성에 실패했어요. 관리자에게 문의하세요. 🍊", ephemeral=True)
             print(f"Failed to create thread: {e}")
@@ -244,12 +314,12 @@ async def setup_taxi_command(bot):
     @app_commands.command(name="택시조회", description="🍊 생성된 택시 모집을 조회해요!")
     async def view_taxi(interaction: discord.Interaction):
         """생성된 택시 모집을 조회합니다."""
-        active_events = {k: v for k, v in bot.taxi_events.items() if not v.is_full and not v.deleted}
+        active_events = {k: v for k, v in bot.taxi_events.items() if not v.is_full and not v.is_departed and not v.deleted}
         if not active_events:
             await interaction.response.send_message("현재 참가 가능한 택시 모집이 없어요! 🍊", ephemeral=True)
             return
 
-        embeds = [discord.Embed(title="택시 모집 조회", description=f"목적지: {view.destination}\n출발 시간: {format_time(view.time)}\n모집자: {view.author.mention}", color=0x00ff00) for view in active_events.values()]
+        embeds = [discord.Embed(title="택시 모집 조회", description=f"목적지: {view.destination}\n출발 시간: {format_time(view.time)}\n모집자: {view.author.mention if view.author else 'Unknown'}", color=0x00ff00) for view in active_events.values()]
         view = TaxiListView(bot)
         await interaction.response.send_message(embeds=embeds, view=view, ephemeral=True)
 
@@ -266,7 +336,7 @@ async def setup_taxi_command(bot):
             embed = discord.Embed(title="내가 참여한 택시 모집", color=0x00ff00)
             embed.add_field(name="목적지", value=view.destination, inline=False)
             embed.add_field(name="출발 시간", value=format_time(view.time), inline=False)
-            embed.add_field(name="모집자", value=view.author.mention, inline=False)
+            embed.add_field(name="모집자", value=view.author.mention if view.author else "Unknown", inline=False)
             embed.add_field(name="참가자", value='\n'.join([p.mention for p in view.participants]), inline=False)
             embeds.append(embed)
 
@@ -288,7 +358,7 @@ async def setup_taxi_command(bot):
         if view.thread is not None:
             mentions = ' '.join([p.mention for p in view.participants])
             await view.thread.send(f"{mentions}\n택시 모집이 삭제되었어요! 🍊")
-        del bot.taxi_events[latest_event_id]
+        view.save_event()
         await interaction.response.send_message("가장 최근에 생성한 택시 모집이 삭제되었어요! 🍊", ephemeral=True)
 
     # 모든 명령어를 봇에 등록합니다
@@ -296,3 +366,14 @@ async def setup_taxi_command(bot):
     bot.tree.add_command(view_taxi)
     bot.tree.add_command(view_my_taxi_participation)
     bot.tree.add_command(delete_taxi)
+
+    await TaxiView.load_events(bot)
+
+def load_taxi_events(bot):
+    """파일에서 택시 모집 정보를 불러옵니다."""
+    TaxiView.load_events(bot)
+
+def save_taxi_events(bot):
+    """파일에 택시 모집 정보를 저장합니다."""
+    for view in bot.taxi_events.values():
+        view.save_event()
