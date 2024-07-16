@@ -7,21 +7,31 @@ from datetime import datetime, timedelta, time
 
 bus_icon = ":bus:"
 
-# 주어진 시작 시간과 종료 시간 사이의 시간 목록을 생성하는 함수
+ohio = 9
+
 def generate_times(start_hour, start_minute, end_hour, end_minute, interval_minutes):
     times = []
-    current_time = datetime.strptime(f"{start_hour}:{start_minute}", "%H:%M")
-    end_time = datetime.strptime(f"{end_hour}:{end_minute}", "%H:%M")
+    
+    start_hour_adjusted = (start_hour + ohio) % 24
+    end_hour_adjusted = (end_hour + ohio) % 24
+    
+    current_time = datetime.strptime(f"{start_hour_adjusted}:{start_minute}", "%H:%M")
+    end_time = datetime.strptime(f"{end_hour_adjusted}:{end_minute}", "%H:%M")
+    
     while current_time <= end_time:
         times.append(current_time.time())
         current_time += timedelta(minutes=interval_minutes)
+    
     return times
 
-# 7시 30분부터 8시 30분까지 65분 간격으로 시간 생성
+# 7시 30분부터 8시 30분까지 5분 간격으로 시간 생성
 morning_times = generate_times(7, 30, 8, 30, 5)
+print(morning_times)
 
-# 21시 50분부터 23시까지 5분 간격으로 시간 생성
+# 21시 50분부터 22시 30분까지 5분 간격으로 시간 생성
 evening_times = generate_times(21, 50, 22, 30, 5)
+print(evening_times)
+
 
 # 출발 정류장 목록
 start_stations = [
