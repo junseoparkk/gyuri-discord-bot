@@ -4,24 +4,30 @@ import json
 import asyncio
 from discord import app_commands
 from datetime import datetime, timedelta, time
+import pytz  # 시간대를 처리하기 위해 추가
 
 bus_icon = ":bus:"
+korea_timezone = pytz.timezone('Asia/Seoul')  # 한국 시간대 설정
 
-# 주어진 시작 시간과 종료 시간 사이의 시간 목록을 생성하는 함수
 def generate_times(start_hour, start_minute, end_hour, end_minute, interval_minutes):
     times = []
-    current_time = datetime.strptime(f"{start_hour}:{start_minute}", "%H:%M")
-    end_time = datetime.strptime(f"{end_hour}:{end_minute}", "%H:%M")
+    
+    current_time = datetime.now(korea_timezone).replace(hour=start_hour, minute=start_minute, second=0, microsecond=0)
+    end_time = datetime.now(korea_timezone).replace(hour=end_hour, minute=end_minute, second=0, microsecond=0)
+    
     while current_time <= end_time:
         times.append(current_time.time())
         current_time += timedelta(minutes=interval_minutes)
+    
     return times
 
-# 7시 30분부터 8시 30분까지 65분 간격으로 시간 생성
+# 7시 30분부터 8시 30분까지 5분 간격으로 시간 생성
 morning_times = generate_times(7, 30, 8, 30, 5)
+print(morning_times)
 
-# 21시 50분부터 23시까지 5분 간격으로 시간 생성
+# 21시 50분부터 22시 30분까지 5분 간격으로 시간 생성
 evening_times = generate_times(21, 50, 22, 30, 5)
+print(evening_times)
 
 # 출발 정류장 목록
 start_stations = [
@@ -79,7 +85,7 @@ async def fetch_bus_arrival_info(station_id):
                         routeId = item['ROUTE_NUM']
                         if any(route['routeId'] == routeId for route in bus_start_routes.get(station_id, [])) or any(route['routeId'] == routeId for route in bus_end_routes.get(station_id, [])):
                             leftStation = item['REMAIN_STATION'] if 'REMAIN_STATION' in item else "정보 없음"
-                            arrival_time = (datetime.now() + timedelta(minutes=predictTravTm)).strftime('%H:%M')
+                            arrival_time = (datetime.now(korea_timezone) + timedelta(minutes=predictTravTm)).strftime('%H:%M')
                             bus_list.append((predictTravTm, routeId, arrival_time, leftStation))
                     return sorted(bus_list, key=lambda x: x[0])
                 except json.JSONDecodeError as e:
@@ -101,7 +107,7 @@ async def fetch_transfer_bus_info(station_id, routeNum):
                     for item in data:
                         if item['ROUTE_NUM'] == routeNum:
                             predictTravTm = int(item['PREDICT_TRAV_TM'])
-                            arrival_time = (datetime.now() + timedelta(minutes=predictTravTm)).strftime('%H:%M')
+                            arrival_time = (datetime.now(korea_timezone) + timedelta(minutes=predictTravTm)).strftime('%H:%M')
                             return predictTravTm, arrival_time
                 except json.JSONDecodeError as e:
                     print(f"JSON Decode Error (Transfer): {e}")
@@ -120,7 +126,7 @@ async def fetch_route_info(routeId, station_id, route_type):
 
 # 메시지를 생성하는 함수
 async def generate_message(stations, route_type):
-    current_time_str = datetime.now().strftime('%Y/%m/%d %H:%M')
+    current_time_str = datetime.now(korea_timezone).strftime('%Y/%m/%d %H:%M')
     message = ""
     
     buses_within_10_minutes = 0
@@ -187,7 +193,7 @@ async def generate_message(stations, route_type):
 # 버스를 모니터링하는 함수
 async def monitor_buses(channel):
     while True:
-        current_time = datetime.now().time()
+        current_time = datetime.now(korea_timezone).time()
         current_hour_minute = time(current_time.hour, current_time.minute)
         
         if any(current_hour_minute == t for t in morning_times):
