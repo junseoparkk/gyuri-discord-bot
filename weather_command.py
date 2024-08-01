@@ -1,9 +1,11 @@
-import requests
+import datetime as datetime_root
 import logging
-from datetime import datetime, timedelta
-from discord.ext import tasks, commands
-import discord
 import os
+from datetime import datetime, timedelta
+
+import discord
+import requests
+from discord.ext import tasks
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,6 +13,7 @@ load_dotenv()
 API_KEY = os.getenv('API_KEY')
 API_URL = os.getenv('API_URL')
 CHANNEL_ID = os.getenv('DISCORD_CID')
+seoul_tz = datetime_root.timezone(datetime_root.timedelta(hours=9))
 
 if CHANNEL_ID is None:
     raise ValueError("CHANNEL_ID is not set in the environment variables")
@@ -112,7 +115,7 @@ def process_weather_data(data, target_date):
 
 
 def get_weather_message(include_future=False):
-    now = datetime.now()
+    now = datetime.now(tz=seoul_tz)
     base_date = now.strftime('%Y%m%d')
     morning_time = '0500'
     nx = '52'
@@ -153,7 +156,7 @@ class WeatherScheduler:
 
     @tasks.loop(seconds=60)
     async def daily_weather_update(self):
-        now = datetime.now()
+        now = datetime.now(seoul_tz)
         if now.hour == 7 and now.minute == 0:
             try:
                 channel = await self.bot.fetch_channel(int(CHANNEL_ID))
